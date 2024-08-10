@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "separable-operator-networks"
+version = "0.0.1"
+authors = [
+  { name="Sean Hooten", email="sean.hooten@hpe.com" },
+  { name="Xinling Yu", email="xyu644@ucsb.edu" },
+]
+maintainers = [
+  { name="Sean Hooten", email="sean.hooten@hpe.com" },
+  { name="Xinling Yu", email="xyu644@ucsb.edu" },
+]
+description = "A small example package"
+readme = "README.md"
+dependencies = [
+  "numpy",
+  "scipy",
+  "jax",
+  "equinox",
+  "optax",
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/hewlettpackard/separable-operator-networks"
+Issues = "https://github.com/hewlettpackard/separable-operator-networks/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/separable_operator_networks"]

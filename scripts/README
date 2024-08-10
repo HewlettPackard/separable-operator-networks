@@ -1,0 +1,7 @@
+# Description of scripts and tests
+
+One may generate test data for advection, diffusion-reaction, and nonlinear-diffusion using the scripts in generate_test_data. At this time, one should use the link to the external repository to generate test data for Burgers' equation.
+
+The main scripts to run each of the above examples are provided in main_scripts.
+
+If one wishes to see how test accuracy scales with number of training points and number of input functions, please use the bash scripts in scale_tests.
