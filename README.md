@@ -1,34 +1,60 @@
 # Separable Operator Networks (SepONet)
+![Static Badge](https://img.shields.io/badge/arXiv-2407.11253-blue?link=https%3A%2F%2Farxiv.org%2Fabs%2F2407.11253)
+![Static Badge](https://img.shields.io/badge/pypi-v0.0.1-green?link=https%3A%2F%2Fpypi.org%2Fproject%2Fseparable-operator-networks%2F)
 
 This is the official repository for separable operator networks (SepONet) originally introduced in [this preprint](https://arxiv.org/abs/2407.11253) [1]. 
 
 ## Installation
+This code uses JAX as a dependency. It is recommended to [install with GPU/TPU compatibility](https://jax.readthedocs.io/en/latest/installation.html) prior to installing this library. JAX CPU is provided as the default dependency.
 
-Please clone the project and install via pip:
+Please install with pip:
 ```bash
-git clone https://github.com/HewlettPackard/separable-operator-networks.git  
-cd separable-operator-networks  
-pip install -e .
+pip install separable-operator-networks
 ```
-Note that this repository uses JAX as a dependency. It is recommended to [install with CUDA compatibility](https://jax.readthedocs.io/en/latest/installation.html) prior to installing this library.
+Alternatively, you may specify the `[cuda12]` extra to install `jax[cuda12]` automatically:
+```bash
+pip install separable-operator-networks[cuda12]
+```
 
 ## Description
 
-Operator learning has become a powerful tool in machine learning for modeling complex physical systems governed by partial differential equations (PDEs). Although Deep Operator Networks (DeepONet) show promise, they require extensive data acquisition. Physics-informed DeepONets (PI-DeepONet) mitigate data scarcity but suffer from inefficient training processes. We introduce Separable Operator Networks (SepONet), a novel framework that significantly enhances the efficiency of physics-informed operator learning. SepONet uses independent trunk networks to learn basis functions separately for different coordinate axes, enabling faster and more memory-efficient training via forward-mode automatic differentiation. Our preprint provides theoretical guarantees for SepONet using the universal approximation theorem and validate its performance through comprehensive benchmarking against PI-DeepONet. Our results demonstrate SepONet's superior performance across various PDEs. For the 1D time-dependent advection equation, SepONet achieves up to 112x faster training and 82x reduction in GPU memory usage compared to PI-DeepONet, while maintaining comparable accuracy. For more challenging problems, SepONet's advantages become more pronounced. In the case of the 2D time-dependent nonlinear diffusion equation, SepONet efficiently handles the complexity, achieving a 6.44% mean relative $\ell_{2}$ error on 100 unseen initial conditions, while PI-DeepONet fails due to memory constraints. This work paves the way for extreme-scale learning of continuous mappings between infinite-dimensional function spaces.
+Operator learning has become a powerful tool in machine learning for modeling complex physical systems governed by partial differential equations (PDEs). Although Deep Operator Networks (DeepONet) show promise, they require extensive data acquisition. Physics-informed DeepONets (PI-DeepONet) mitigate data scarcity but suffer from inefficient training processes. We introduce Separable Operator Networks (SepONet), a novel framework that significantly enhances the efficiency of physics-informed operator learning. SepONet uses independent trunk networks to learn basis functions separately for different coordinate axes, enabling faster and more memory-efficient training via forward-mode automatic differentiation. The SepONet architecture for a $d=2$ dimensional coordinate grid is depicted below. The architecture is inspired by the method of separation of variables and recent exploration of separable physics-informed neural networks [2] for single instance PDE solutions.
 
-The SepONet architecture is depicted for $d=2$ dimensional coordinate grid below. Predictions of parametric PDEs are obtained efficiently by feeding points along coordinate axes through independent trunk networks, then performing cross product and sum-reduction with outputs of the branch network. Partial derivatives of outputs are obtained efficiently by forward automatic differentiation. The architecture is inspired by the method of separation of variables and recent exploration of [separable physics-informed neural networks](https://arxiv.org/abs/2211.08761) [2] for single instance PDE solutions.
+Our [preprint](https://arxiv.org/abs/2407.11253) provides a universal approximation theorem for SepONet proving that it generalizes to arbitrary operator learning problems. For a variety of 1D time-dependent PDEs, SepONet has similar accuracy scaling to PI-DeepONet, but with as much as 112x faster training time and 82x reduction in GPU memory usage. For 2D time-dependent PDEs, SepONet is capable of accurate predictions at scales where PI-DeepONet fails. The full test scaling results as a function of the number of collocation points and number of input functions is shown below. These results may be reproduced using our [scripts](https://github.com/HewlettPackard/separable-operator-networks/tree/main/scripts).
 
 ![SepONet architecture for 2 dimensional coordinate grid](docs/assets/SepONet_Architecture.png?raw=true)
+![Comparing SepONet to PI-DeepONet when varying number of collocation points](docs/assets/figure1_varying_Nc.png?raw=true)
+![Comparing SepONet to PI-DeepONet when varying number of input functions](docs/assets/figure2_varying_Nf.png?raw=true)
 
 ## Code Overview
 
-Source code can be imported via  
+A SepONet model can be imported using:
 ```python
-import separable_operator_networks  
-```
-SepONet and DeepONet models are implemented in the `models` submodule. PDE instances and helper functions can be imported from the `pde` submodule.
+import jax
+import separable_operator_networks as sepop
+d = ... # replace with problem dimension
+branch_dim = ... # replace with input shape for branch network (MLP by default)
+key = jax.random.key(0)
 
-Test data can be generated using the Python scripts in scripts/generate_test_data. Test cases can be ran using the scripts in scripts/main_scripts and scripts/scale_tests.
+model = sepop.models.SepONet(d, branch_dim, key=key)
+```
+Other model classes such as `PINN`, `SPINN`, `DeepONet` are implemented in the `sepop.models` submodule. These models are implemented as subclasses of `eqx.Module` (see [equinox](https://github.com/patrick-kidger/equinox)), enabling `eqx.filter_vmap` and `eqx.filter_grad`, along with easily customizable training routines via [optax](https://github.com/google-deepmind/optax) (see `sepop.train.train_loop(...)` for a simple `optax` training loop). PDE instances, loss functions, and other helper functions can be imported from the corresponding examples in the `sepop.pde` submodule (such as `sepop.pde.advection`).
+
+Test data can be generated using the Python scripts in `/scripts/generate_test_data`. Test cases can be ran using the scripts in `/scripts/main_scripts` and `/scripts/scale_tests`.
+
+## Citation
+
+```tex
+@misc{yu2024separableoperatornetworks,
+title={Separable Operator Networks}, 
+author={Xinling Yu and Sean Hooten and Ziyue Liu and Yequan Zhao and Marco Fiorentino and Thomas Van Vaerenbergh and Zheng Zhang},
+year={2024},
+eprint={2407.11253},
+archivePrefix={arXiv},
+primaryClass={cs.LG},
+url={https://arxiv.org/abs/2407.11253}, 
+}
+```
 
 ## Authors
 

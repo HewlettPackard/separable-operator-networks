@@ -5,6 +5,19 @@ build-backend = "hatchling.build"
 [project]
 name = "separable-operator-networks"
 version = "0.0.1"
+description = "Separable operator models for extreme-scale learning of parametric PDEs"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+requires-python = ">=3.8"
+keywords = [
+  "operator learning",
+  "scientific machine learning",
+  "phyics-informed neural network",
+  "deep operator network",
+  "DeepONet",
+  "partial differential equations",
+  "PDE",
+]
 authors = [
   { name="Sean Hooten", email="sean.hooten@hpe.com" },
   { name="Xinling Yu", email="xyu644@ucsb.edu" },
@@ -13,25 +26,42 @@ maintainers = [
   { name="Sean Hooten", email="sean.hooten@hpe.com" },
   { name="Xinling Yu", email="xyu644@ucsb.edu" },
 ]
-description = "A small example package"
-readme = "README.md"
 dependencies = [
   "numpy",
   "scipy",
   "jax",
   "equinox",
   "optax",
+  "GPUtil",
 ]
-requires-python = ">=3.8"
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Physics",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
+
+[project.optional-dependencies]
+cuda12 = ["jax[cuda12]"]
 
 [project.urls]
 Homepage = "https://github.com/hewlettpackard/separable-operator-networks"
 Issues = "https://github.com/hewlettpackard/separable-operator-networks/issues"
+Repository = "https://github.com/hewlettpackard/separable-operator-networks.git"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["*.png",
+          "/data",
+          "/docs",
+          "/scripts",
+          "/results",]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/separable_operator_networks"]
