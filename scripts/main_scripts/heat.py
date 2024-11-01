@@ -108,12 +108,8 @@ args = parser.parse_args()
 # set up the device
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device_name)
 
-fs_train = jnp.array(
-    scipy.io.loadmat(args.data_dir + "GRFs_heat.mat")["saved_GRFs"]
-)[0:10000, :]
-fs_test = jnp.array(
-    scipy.io.loadmat(args.data_dir + "GRFs_heat.mat")["saved_GRFs"]
-)[10000:, :]
+fs_train = jnp.load(args.data_dir + "fs_train.npy")
+fs_test = jnp.load(args.data_dir + "fs_test.npy")
 u_test = jnp.load(args.data_dir + "u_test.npy")
 
 # result dir

@@ -13,6 +13,129 @@ import equinox as eqx
 from ..hvp import hvp_fwdfwd, hvp_fwdrev
 from ..utils import create_mesh
 
+from diffrax import diffeqsolve, ODETerm, SaveAt, PIDController, Tsit5
+from jaxtyping import Float, Array
+
+#########################################################################
+# Generate Ground Truth Data
+#########################################################################
+
+class SpatialDiscretisation(eqx.Module):
+    x0: float = eqx.field(static=True)
+    x_final: float = eqx.field(static=True)
+    vals: Float[Array, str("n")]
+
+    @property
+    def δx(self):
+        return (self.x_final - self.x0) / (len(self.vals) - 1)
+
+    def binop(self, other, fn):
+        if isinstance(other, SpatialDiscretisation):
+            if self.x0 != other.x0 or self.x_final != other.x_final:
+                raise ValueError("Mismatched spatial discretisations")
+            other = other.vals
+        return SpatialDiscretisation(self.x0, self.x_final, fn(self.vals, other))
+
+    def __add__(self, other):
+        return self.binop(other, lambda x, y: x + y)
+
+    def __mul__(self, other):
+        return self.binop(other, lambda x, y: x * y)
+
+    def __radd__(self, other):
+        return self.binop(other, lambda x, y: y + x)
+
+    def __rmul__(self, other):
+        return self.binop(other, lambda x, y: y * x)
+
+    def __sub__(self, other):
+        return self.binop(other, lambda x, y: x - y)
+
+    def __rsub__(self, other):
+        return self.binop(other, lambda x, y: y - x)
+
+def laplacian(y: SpatialDiscretisation) -> SpatialDiscretisation:
+    y_next = jnp.roll(y.vals, shift=1)
+    y_prev = jnp.roll(y.vals, shift=-1)
+    Δy = (y_next - 2 * y.vals + y_prev) / ((jnp.pi*y.δx)**2)
+    # Dirichlet boundary condition
+    Δy = Δy.at[0].set(0)
+    Δy = Δy.at[-1].set(0)
+    return SpatialDiscretisation(y.x0, y.x_final, Δy)
+
+def solve_heat(y0):
+    xmin, xmax = 0., 1.
+    tmin, tmax = 0., 1.
+    Nt = 128
+
+    def vector_field(t, y, args):
+        return laplacian(y)
+
+    teval = jnp.linspace(tmin, tmax, Nt)
+    δt = 0.0001
+
+    y0 = y0.at[0].set(0)
+    y0 = y0.at[-1].set(0)
+
+    y0 = SpatialDiscretisation(xmin, xmax, y0)
+
+    term = ODETerm(vector_field)
+    saveat = SaveAt(ts=teval)
+    rtol = 1e-10
+    atol = 1e-10
+    solver = Tsit5()
+    stepsize_controller = PIDController(
+        pcoeff=0.3, icoeff=0.4, rtol=rtol, atol=atol, dtmax=0.001,
+    )
+
+    sol = diffeqsolve(term, solver, t0=tmin, t1=tmax, dt0=δt, y0=y0, max_steps=16**5, saveat=saveat,
+                      stepsize_controller=stepsize_controller)
+
+    return sol.ys.vals
+
+# RBF kernel
+@jax.jit
+def RBF(x1, x2, params):
+    output_scale, lengthscales = params
+    diffs = jnp.expand_dims(x1 / lengthscales, 1) - jnp.expand_dims(
+        x2 / lengthscales, 0
+    )
+    r2 = jnp.sum(diffs**2, axis=2)
+    return output_scale * jnp.exp(-0.5 * r2)
+
+# randomly sample a Gaussian random field (128 sensors)
+@jax.jit
+def GP_sample(key):
+    xmin, xmax = 0, 1
+    gp_params = (1.0, 0.2)
+    N = 512
+    Nx = 128
+    X = jnp.linspace(xmin, xmax, N)[:, None]
+    x = jnp.linspace(xmin, xmax, Nx)  # Nx sensors
+    jitter = 1e-10
+    K = RBF(X, X, gp_params)
+    L = jnp.linalg.cholesky(K + jitter * jnp.eye(N))
+    gp_sample = jnp.dot(L, jax.random.normal(key, (N,)))
+    # Create a callable interpolation function
+    f_fn = lambda x: jnp.interp(x, X.flatten(), gp_sample)  # noqa: E731
+    f = f_fn(x)
+
+    # boundary conditions
+    f = f * 4 * (1 - x) * x
+    f = f.at[0].set(0)
+    f = f.at[-1].set(0)
+    return f
+
+def generate_training_data(Nf=10000, key=None):
+    keys = jax.random.split(key, Nf)
+    y0 = jax.vmap(lambda key: GP_sample(key))(keys)
+    return y0
+
+def generate_test_data(Nf=100, key=None):
+    y0 = generate_training_data(Nf=Nf, key=key)
+    y = jax.vmap(solve_heat)(y0)
+    return y0, y
+
 
 #########################################################################
 # Loss functions for DeepONet/SepONet Models
