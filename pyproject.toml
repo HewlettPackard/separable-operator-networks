@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "separable-operator-networks"
-version = "0.0.1"
+version = "0.0.2"
 description = "Separable operator models for extreme-scale learning of parametric PDEs"
 readme = "README.md"
 license = {file = "LICENSE.md"}
@@ -33,6 +33,7 @@ dependencies = [
   "equinox",
   "optax",
   "GPUtil",
+  "diffrax",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",

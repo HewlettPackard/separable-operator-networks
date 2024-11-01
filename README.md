@@ -1,6 +1,6 @@
 # Separable Operator Networks (SepONet)
 [![Static Badge](https://img.shields.io/badge/arXiv-2407.11253-blue?link=https%3A%2F%2Farxiv.org%2Fabs%2F2407.11253)](https://arxiv.org/abs/2407.11253)
-[![Static Badge](https://img.shields.io/badge/pypi-v0.0.1-green?link=https%3A%2F%2Fpypi.org%2Fproject%2Fseparable-operator-networks%2F)](https://pypi.org/project/separable-operator-networks)
+[![Static Badge](https://img.shields.io/badge/pypi-v0.0.2-green?link=https%3A%2F%2Fpypi.org%2Fproject%2Fseparable-operator-networks%2F)](https://pypi.org/project/separable-operator-networks)
 
 This is the official repository for separable operator networks (SepONet) originally introduced in [this preprint](https://arxiv.org/abs/2407.11253) [1]. 
 
